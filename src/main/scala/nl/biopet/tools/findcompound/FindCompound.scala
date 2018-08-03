@@ -24,9 +24,8 @@ package nl.biopet.tools.findcompound
 import java.io.{File, PrintWriter}
 
 import htsjdk.variant.vcf.VCFFileReader
-import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.ngs.intervals.BedRecord
-import nl.biopet.utils.ngs.vcf
+import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.tool.ToolCommand
 import picard.annotation.{Gene, GeneAnnotationReader}
 

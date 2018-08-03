@@ -131,19 +131,23 @@ object FindCompound extends ToolCommand[Args] {
 
     results.foreach { gene =>
       val geneName = gene.gene.getName
-      val homVarCount = gene.samples.count(x => x.exon.homVar + x.intron.homVar > 0)
+      val homVarCount =
+        gene.samples.count(x => x.exon.homVar + x.intron.homVar > 0)
       val compoundCount =
-        gene.samples.count(x => x.exon.homVar + x.intron.homVar  == 0 && x.exon.het + x.intron.het  >= 2)
+        gene.samples.count(x =>
+          x.exon.homVar + x.intron.homVar == 0 && x.exon.het + x.intron.het >= 2)
 
-      val sampleCounts = gene.samples.flatMap(s =>
-        List(s"${s.exon.het + s.intron.het}", s"${s.exon.homVar + s.intron.homVar }", s"${s.exon.homRef + s.intron.homRef}"))
+      val sampleCounts = gene.samples.flatMap(
+        s =>
+          List(s"${s.exon.het + s.intron.het}",
+               s"${s.exon.homVar + s.intron.homVar}",
+               s"${s.exon.homRef + s.intron.homRef}"))
       totalWriter.println(
         (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
           .mkString("\t"))
     }
 
     totalWriter.close()
-
 
     logger.info("Done")
   }
@@ -158,16 +162,27 @@ object FindCompound extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
-      |
+      |this tool will count the number of samples that has a homozygous event or a compound homozygous event per gene.
+      |It's advised to first filter on annotation scores such as sift and polyphen before using this tool.
     """.stripMargin
 
   def manualText: String =
     """
-      |
+      |To use this the reference file should have a dict file next to it.
+      |The vcf file should have genotypes and should be in the same contigs names as the reference.
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |Default run with a vcf file:
+      |${example("-i",
+                 "<input vcf file>",
+                 "-o",
+                 "<output dir>",
+                 "-R",
+                 "<reference fasta>",
+                 "-r",
+                 "<refflat file>")}
       |
     """.stripMargin
 }

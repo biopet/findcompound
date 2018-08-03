@@ -1,7 +1,8 @@
 # FindCompound
 
 
-
+this tool will count the number of samples that has a homozygous event or a compound homozygous event per gene.
+It's advised to first filter on annotation scores such as sift and polyphen before using this tool.
     
 
 # Documentation

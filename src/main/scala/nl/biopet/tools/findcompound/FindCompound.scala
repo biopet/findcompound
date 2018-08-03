@@ -125,6 +125,26 @@ object FindCompound extends ToolCommand[Args] {
 
     intronWriter.close()
 
+    val totalWriter = new PrintWriter(
+      new File(cmdArgs.outputDir, "total.counts"))
+    totalWriter.println(headerLine)
+
+    results.foreach { gene =>
+      val geneName = gene.gene.getName
+      val homVarCount = gene.samples.count(x => x.exon.homVar + x.intron.homVar > 0)
+      val compoundCount =
+        gene.samples.count(x => x.exon.homVar + x.intron.homVar  == 0 && x.exon.het + x.intron.het  >= 2)
+
+      val sampleCounts = gene.samples.flatMap(s =>
+        List(s"${s.exon.het + s.intron.het}", s"${s.exon.homVar + s.intron.homVar }", s"${s.exon.homRef + s.intron.homRef}"))
+      totalWriter.println(
+        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
+          .mkString("\t"))
+    }
+
+    totalWriter.close()
+
+
     logger.info("Done")
   }
 

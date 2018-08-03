@@ -53,5 +53,6 @@ class FindCompoundTest extends ToolTest[Args] {
 
     new File(outputDir, "exon.counts") should exist
     new File(outputDir, "intron.counts") should exist
+    new File(outputDir, "total.counts") should exist
   }
 }

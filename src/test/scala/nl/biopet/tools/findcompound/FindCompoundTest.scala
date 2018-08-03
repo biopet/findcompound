@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.findcompound
 
+import java.io.File
+
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
 
@@ -31,5 +33,25 @@ class FindCompoundTest extends ToolTest[Args] {
     intercept[IllegalArgumentException] {
       FindCompound.main(Array())
     }
+  }
+
+  @Test
+  def testDefault(): Unit = {
+    val outputDir = File.createTempFile("test.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    outputDir.deleteOnExit()
+    FindCompound.main(
+      Array("-i",
+            resourcePath("/multi.vcf.gz"),
+            "-o",
+            outputDir.getAbsolutePath,
+            "-R",
+            resourcePath("/fake_chrQ.fa"),
+            "-r",
+            resourcePath("/chrQ.refflat")))
+
+    new File(outputDir, "exon.counts") should exist
+    new File(outputDir, "intron.counts") should exist
   }
 }

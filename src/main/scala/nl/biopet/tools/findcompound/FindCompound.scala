@@ -21,22 +21,120 @@
 
 package nl.biopet.tools.findcompound
 
+import java.io.{File, PrintWriter}
+
+import htsjdk.variant.vcf.VCFFileReader
+import nl.biopet.utils.ngs.fasta
+import nl.biopet.utils.ngs.intervals.BedRecord
+import nl.biopet.utils.ngs.vcf
 import nl.biopet.utils.tool.ToolCommand
+import picard.annotation.{Gene, GeneAnnotationReader}
+
+import scala.collection.JavaConversions._
 
 object FindCompound extends ToolCommand[Args] {
   def emptyArgs = Args()
   def argsParser = new ArgsParser(this)
 
-  override def urlToolName: String = "tool-template"
   def main(args: Array[String]): Unit = {
     val cmdArgs = cmdArrayToArgs(args)
 
     logger.info("Start")
 
-    //TODO: Execute code
+    //Sets picard logging level
+    htsjdk.samtools.util.Log
+      .setGlobalLogLevel(
+        htsjdk.samtools.util.Log.LogLevel.valueOf(logger.getLevel.toString))
+
+    logger.info("Reading refflat file")
+
+    val geneReader = GeneAnnotationReader.loadRefFlat(
+      cmdArgs.refflatFile,
+      fasta.getCachedDict(cmdArgs.referenceFasta))
+
+    val vcfReader = new VCFFileReader(cmdArgs.inputVcfFile, true)
+
+    val samples = vcf.getSampleIds(cmdArgs.inputVcfFile).toIndexedSeq
+    val sampleMap = samples.zipWithIndex.toMap
+
+    val results = geneReader.getAll
+      .map { gene =>
+        val r =
+          GeneResults(gene, IndexedSeq.fill(samples.length)(VariantTypes()))
+        val variants =
+          vcf.loadRegion(vcfReader,
+                         BedRecord(gene.getContig, gene.getStart, gene.getEnd))
+        val exons = gene.flatMap(_.exons).toList
+
+        variants.foreach { variant =>
+          variant.getGenotypes.filter(_.isCalled).foreach { g =>
+            val idx = sampleMap(g.getSampleName)
+            val exonic = exons.exists(e =>
+              e.start <= variant.getStart && e.end >= variant.getEnd)
+            g match {
+              case _ if g.isHet && exonic    => r.samples(idx).exon.het += 1
+              case _ if g.isHet              => r.samples(idx).intron.het += 1
+              case _ if g.isHomRef && exonic => r.samples(idx).exon.homRef += 1
+              case _ if g.isHomRef           => r.samples(idx).intron.homRef += 1
+              case _ if g.isHomVar && exonic => r.samples(idx).exon.homVar += 1
+              case _ if g.isHomVar           => r.samples(idx).intron.homVar += 1
+              case _                         => throw new IllegalStateException("Please fix this")
+            }
+          }
+        }
+        r
+      }
+      .toList
+      .sortBy(_.gene.getName)
+
+    val headerLine = (List("#Gene", "Compound", "HomRef") ++ samples.flatMap(
+      s => List(s"$s-het", s"$s-homVar", s"$s-homRef"))).mkString("\t")
+    val exonWriter = new PrintWriter(new File(cmdArgs.outputDir, "exon.counts"))
+    exonWriter.println(headerLine)
+
+    results.foreach { gene =>
+      val geneName = gene.gene.getName
+      val homVarCount = gene.samples.count(_.exon.homVar > 0)
+      val compoundCount =
+        gene.samples.count(x => x.exon.homVar == 0 && x.intron.het >= 2)
+
+      val sampleCounts = gene.samples.flatMap(s =>
+        List(s"${s.exon.het}", s"${s.exon.homVar}", s"${s.exon.homRef}"))
+      exonWriter.println(
+        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
+          .mkString("\t"))
+    }
+    exonWriter.close()
+
+    val intronWriter = new PrintWriter(
+      new File(cmdArgs.outputDir, "intron.counts"))
+    intronWriter.println(headerLine)
+
+    results.foreach { gene =>
+      val geneName = gene.gene.getName
+      val homVarCount = gene.samples.count(_.intron.homVar > 0)
+      val compoundCount =
+        gene.samples.count(x => x.intron.homVar == 0 && x.intron.het >= 2)
+
+      val sampleCounts = gene.samples.flatMap(s =>
+        List(s"${s.intron.het}", s"${s.intron.homVar}", s"${s.intron.homRef}"))
+      intronWriter.println(
+        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
+          .mkString("\t"))
+    }
+
+    intronWriter.close()
 
     logger.info("Done")
   }
+
+  case class VariantCounts(var het: Int = 0,
+                           var homVar: Int = 0,
+                           var homRef: Int = 0)
+  case class VariantTypes(exon: VariantCounts = VariantCounts(),
+                          intron: VariantCounts = VariantCounts())
+  //TODO: add UTR regions here
+  case class GeneResults(gene: Gene, samples: IndexedSeq[VariantTypes])
 
   def descriptionText: String =
     """

@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tooltemplate
+package nl.biopet.tools.findcompound
 
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test

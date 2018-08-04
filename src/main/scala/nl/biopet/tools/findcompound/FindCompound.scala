@@ -61,29 +61,37 @@ object FindCompound extends ToolCommand[Args] {
       .toList
       .sortBy(_.gene.getName)
 
-    writeOutput(results, samples, new File(cmdArgs.outputDir, "exon.counts"),
-      _.exonHomVarCount,
-      _.exonCompoundCount,
-      _.exonCounts)
-    writeOutput(results, samples, new File(cmdArgs.outputDir, "intron.counts"),
-      _.intronHomVarCount,
-      _.intronCompoundCount,
-      _.intronCounts)
-    writeOutput(results, samples, new File(cmdArgs.outputDir, "total.counts"),
-      _.totalHomVarCount,
-      _.totalCompoundCount,
-      _.totalCounts)
+    writeOutput(results,
+                samples,
+                new File(cmdArgs.outputDir, "exon.counts"),
+                _.exonHomVarCount,
+                _.exonCompoundCount,
+                _.exonCounts)
+    writeOutput(results,
+                samples,
+                new File(cmdArgs.outputDir, "intron.counts"),
+                _.intronHomVarCount,
+                _.intronCompoundCount,
+                _.intronCounts)
+    writeOutput(results,
+                samples,
+                new File(cmdArgs.outputDir, "total.counts"),
+                _.totalHomVarCount,
+                _.totalCompoundCount,
+                _.totalCounts)
 
     logger.info("Done")
   }
 
   /** This method reads the vcf file per given gene and create a [[GeneResults]] */
-  def createGeneResults(gene: Gene, sampleMap: Map[String, Int], vcfReader: VCFFileReader): GeneResults = {
+  def createGeneResults(gene: Gene,
+                        sampleMap: Map[String, Int],
+                        vcfReader: VCFFileReader): GeneResults = {
     val r =
       GeneResults(gene, IndexedSeq.fill(sampleMap.size)(VariantTypes()))
     val variants =
       vcf.loadRegion(vcfReader,
-        BedRecord(gene.getContig, gene.getStart, gene.getEnd))
+                     BedRecord(gene.getContig, gene.getStart, gene.getEnd))
     val exons = gene.flatMap(_.exons).toList
 
     variants.foreach { variant =>
@@ -106,7 +114,8 @@ object FindCompound extends ToolCommand[Args] {
   }
 
   /** This method will write results to a file */
-  def writeOutput(results: List[GeneResults], samples: IndexedSeq[String],
+  def writeOutput(results: List[GeneResults],
+                  samples: IndexedSeq[String],
                   outputFile: File,
                   homVarCount: (GeneResults) => Int,
                   compoundCount: (GeneResults) => Int,

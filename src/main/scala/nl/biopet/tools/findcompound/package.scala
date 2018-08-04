@@ -14,7 +14,7 @@ package object findcompound {
     def intronCounts: List[Int] = intron.counts
     def totalCounts: List[Int] = exon.counts.zip(intron.counts).map{ case (e, i) => e + i}
   }
-  //TODO: add UTR regions here
+
   case class GeneResults(gene: Gene, samples: IndexedSeq[VariantTypes]) {
     def exonHomVarCount: Int = samples.count(_.exon.homVar > 0)
     def exonCompoundCount: Int = samples.count(x => x.exon.homVar == 0 && x.intron.het >= 2)

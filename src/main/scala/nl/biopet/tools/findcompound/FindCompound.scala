@@ -77,6 +77,7 @@ object FindCompound extends ToolCommand[Args] {
     logger.info("Done")
   }
 
+  /** This method reads the vcf file per given gene and create a [[GeneResults]] */
   def createGeneResults(gene: Gene, sampleMap: Map[String, Int], vcfReader: VCFFileReader): GeneResults = {
     val r =
       GeneResults(gene, IndexedSeq.fill(sampleMap.size)(VariantTypes()))
@@ -104,6 +105,7 @@ object FindCompound extends ToolCommand[Args] {
     r
   }
 
+  /** This method will write results to a file */
   def writeOutput(results: List[GeneResults], samples: IndexedSeq[String],
                   outputFile: File,
                   homVarCount: (GeneResults) => Int,

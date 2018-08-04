@@ -57,107 +57,74 @@ object FindCompound extends ToolCommand[Args] {
     val sampleMap = samples.zipWithIndex.toMap
 
     val results = geneReader.getAll
-      .map { gene =>
-        val r =
-          GeneResults(gene, IndexedSeq.fill(samples.length)(VariantTypes()))
-        val variants =
-          vcf.loadRegion(vcfReader,
-                         BedRecord(gene.getContig, gene.getStart, gene.getEnd))
-        val exons = gene.flatMap(_.exons).toList
-
-        variants.foreach { variant =>
-          variant.getGenotypes.filter(_.isCalled).foreach { g =>
-            val idx = sampleMap(g.getSampleName)
-            val exonic = exons.exists(e =>
-              e.start <= variant.getStart && e.end >= variant.getEnd)
-            g match {
-              case _ if g.isHet && exonic    => r.samples(idx).exon.het += 1
-              case _ if g.isHet              => r.samples(idx).intron.het += 1
-              case _ if g.isHomRef && exonic => r.samples(idx).exon.homRef += 1
-              case _ if g.isHomRef           => r.samples(idx).intron.homRef += 1
-              case _ if g.isHomVar && exonic => r.samples(idx).exon.homVar += 1
-              case _ if g.isHomVar           => r.samples(idx).intron.homVar += 1
-              case _                         => throw new IllegalStateException("Please fix this")
-            }
-          }
-        }
-        r
-      }
+      .map(createGeneResults(_, sampleMap, vcfReader))
       .toList
       .sortBy(_.gene.getName)
 
-    val headerLine = (List("#Gene", "Compound", "HomRef") ++ samples.flatMap(
-      s => List(s"$s-het", s"$s-homVar", s"$s-homRef"))).mkString("\t")
-    val exonWriter = new PrintWriter(new File(cmdArgs.outputDir, "exon.counts"))
-    exonWriter.println(headerLine)
-
-    results.foreach { gene =>
-      val geneName = gene.gene.getName
-      val homVarCount = gene.samples.count(_.exon.homVar > 0)
-      val compoundCount =
-        gene.samples.count(x => x.exon.homVar == 0 && x.intron.het >= 2)
-
-      val sampleCounts = gene.samples.flatMap(s =>
-        List(s"${s.exon.het}", s"${s.exon.homVar}", s"${s.exon.homRef}"))
-      exonWriter.println(
-        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
-          .mkString("\t"))
-    }
-    exonWriter.close()
-
-    val intronWriter = new PrintWriter(
-      new File(cmdArgs.outputDir, "intron.counts"))
-    intronWriter.println(headerLine)
-
-    results.foreach { gene =>
-      val geneName = gene.gene.getName
-      val homVarCount = gene.samples.count(_.intron.homVar > 0)
-      val compoundCount =
-        gene.samples.count(x => x.intron.homVar == 0 && x.intron.het >= 2)
-
-      val sampleCounts = gene.samples.flatMap(s =>
-        List(s"${s.intron.het}", s"${s.intron.homVar}", s"${s.intron.homRef}"))
-      intronWriter.println(
-        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
-          .mkString("\t"))
-    }
-
-    intronWriter.close()
-
-    val totalWriter = new PrintWriter(
-      new File(cmdArgs.outputDir, "total.counts"))
-    totalWriter.println(headerLine)
-
-    results.foreach { gene =>
-      val geneName = gene.gene.getName
-      val homVarCount =
-        gene.samples.count(x => x.exon.homVar + x.intron.homVar > 0)
-      val compoundCount =
-        gene.samples.count(x =>
-          x.exon.homVar + x.intron.homVar == 0 && x.exon.het + x.intron.het >= 2)
-
-      val sampleCounts = gene.samples.flatMap(
-        s =>
-          List(s"${s.exon.het + s.intron.het}",
-               s"${s.exon.homVar + s.intron.homVar}",
-               s"${s.exon.homRef + s.intron.homRef}"))
-      totalWriter.println(
-        (List(geneName, homVarCount, compoundCount) ++ sampleCounts)
-          .mkString("\t"))
-    }
-
-    totalWriter.close()
+    writeOutput(results, samples, new File(cmdArgs.outputDir, "exon.counts"),
+      _.exonHomVarCount,
+      _.exonCompoundCount,
+      _.exonCounts)
+    writeOutput(results, samples, new File(cmdArgs.outputDir, "intron.counts"),
+      _.intronHomVarCount,
+      _.intronCompoundCount,
+      _.intronCounts)
+    writeOutput(results, samples, new File(cmdArgs.outputDir, "total.counts"),
+      _.totalHomVarCount,
+      _.totalCompoundCount,
+      _.totalCounts)
 
     logger.info("Done")
   }
 
-  case class VariantCounts(var het: Int = 0,
-                           var homVar: Int = 0,
-                           var homRef: Int = 0)
-  case class VariantTypes(exon: VariantCounts = VariantCounts(),
-                          intron: VariantCounts = VariantCounts())
-  //TODO: add UTR regions here
-  case class GeneResults(gene: Gene, samples: IndexedSeq[VariantTypes])
+  def createGeneResults(gene: Gene, sampleMap: Map[String, Int], vcfReader: VCFFileReader): GeneResults = {
+    val r =
+      GeneResults(gene, IndexedSeq.fill(sampleMap.size)(VariantTypes()))
+    val variants =
+      vcf.loadRegion(vcfReader,
+        BedRecord(gene.getContig, gene.getStart, gene.getEnd))
+    val exons = gene.flatMap(_.exons).toList
+
+    variants.foreach { variant =>
+      variant.getGenotypes.filter(_.isCalled).foreach { g =>
+        val idx = sampleMap(g.getSampleName)
+        val exonic = exons.exists(e =>
+          e.start <= variant.getStart && e.end >= variant.getEnd)
+        g match {
+          case _ if g.isHet && exonic    => r.samples(idx).exon.het += 1
+          case _ if g.isHet              => r.samples(idx).intron.het += 1
+          case _ if g.isHomRef && exonic => r.samples(idx).exon.homRef += 1
+          case _ if g.isHomRef           => r.samples(idx).intron.homRef += 1
+          case _ if g.isHomVar && exonic => r.samples(idx).exon.homVar += 1
+          case _ if g.isHomVar           => r.samples(idx).intron.homVar += 1
+          case _                         => throw new IllegalStateException("Please fix this")
+        }
+      }
+    }
+    r
+  }
+
+  def writeOutput(results: List[GeneResults], samples: IndexedSeq[String],
+                  outputFile: File,
+                  homVarCount: (GeneResults) => Int,
+                  compoundCount: (GeneResults) => Int,
+                  sampleCounts: VariantTypes => List[Int]): Unit = {
+    val headerLine = (List("#Gene", "Compound", "HomRef") ++ samples.flatMap(
+      s => List(s"$s-het", s"$s-homVar", s"$s-homRef"))).mkString("\t")
+
+    val writer = new PrintWriter(outputFile)
+    writer.println(headerLine)
+
+    results.foreach { gene =>
+      val geneName = gene.gene.getName
+
+      writer.println(
+        (List(geneName, homVarCount(gene), compoundCount(gene)) ++ gene.samples
+          .flatMap(sampleCounts))
+          .mkString("\t"))
+    }
+    writer.close()
+  }
 
   def descriptionText: String =
     """

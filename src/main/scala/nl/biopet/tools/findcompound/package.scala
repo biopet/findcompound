@@ -51,5 +51,8 @@ package object findcompound {
     def totalCompoundCount: Int =
       samples.count(x =>
         x.exon.homVar + x.intron.homVar == 0 && x.exon.het + x.intron.het >= 2)
+
+    def extractSamples(s: IndexedSeq[Int]): GeneResults =
+      this.copy(samples = s.map(this.samples))
   }
 }

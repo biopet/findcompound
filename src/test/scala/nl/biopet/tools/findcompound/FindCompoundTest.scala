@@ -56,7 +56,7 @@ class FindCompoundTest extends ToolTest[Args] {
     new File(outputDir, "intron.counts") should exist
     new File(outputDir, "total.counts") should exist
 
-    val header = "#Gene\tCompound\tHomRef\t" +
+    val header = "#Gene\tCompound\tHomVar\t" +
       "Sample_1-het\tSample_1-homVar\tSample_1-homRef\t" +
       "Sample_2-het\tSample_2-homVar\tSample_2-homRef\t" +
       "Sample_3-het\tSample_3-homVar\tSample_3-homRef"
@@ -76,5 +76,31 @@ class FindCompoundTest extends ToolTest[Args] {
       header,
       "geneA\t2\t0\t2\t1\t0\t1\t0\t2\t0\t1\t2",
       "geneB\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0").mkString("\n")
+  }
+
+  @Test
+  def testPedigree(): Unit = {
+    val outputDir = File.createTempFile("test.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    outputDir.deleteOnExit()
+    FindCompound.main(
+      Array(
+        "-i",
+        resourcePath("/multi.vcf.gz"),
+        "-o",
+        outputDir.getAbsolutePath,
+        "-R",
+        resourcePath("/fake_chrQ.fa"),
+        "-r",
+        resourcePath("/chrQ.refflat"),
+        "-p",
+        resourcePath("/pedFile.ped")
+      ))
+
+    new File(outputDir, "exon.counts") should exist
+    new File(outputDir, "intron.counts") should exist
+    new File(outputDir, "total.counts") should exist
+
   }
 }

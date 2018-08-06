@@ -117,8 +117,8 @@ object FindCompound extends ToolCommand[Args] {
   def writeOutput(results: List[GeneResults],
                   samples: IndexedSeq[String],
                   outputFile: File,
-                  homVarCount: (GeneResults) => Int,
-                  compoundCount: (GeneResults) => Int,
+                  homVarCount: GeneResults => Int,
+                  compoundCount: GeneResults => Int,
                   sampleCounts: VariantTypes => List[Int]): Unit = {
     val headerLine = (List("#Gene", "Compound", "HomRef") ++ samples.flatMap(
       s => List(s"$s-het", s"$s-homVar", s"$s-homRef"))).mkString("\t")

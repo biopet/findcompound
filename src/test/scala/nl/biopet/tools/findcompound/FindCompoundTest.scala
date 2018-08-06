@@ -23,6 +23,7 @@ package nl.biopet.tools.findcompound
 
 import java.io.File
 
+import nl.biopet.utils.io.getLinesFromFile
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
 
@@ -54,5 +55,26 @@ class FindCompoundTest extends ToolTest[Args] {
     new File(outputDir, "exon.counts") should exist
     new File(outputDir, "intron.counts") should exist
     new File(outputDir, "total.counts") should exist
+
+    val header = "#Gene\tCompound\tHomRef\t" +
+      "Sample_1-het\tSample_1-homVar\tSample_1-homRef\t" +
+      "Sample_2-het\tSample_2-homVar\tSample_2-homRef\t" +
+      "Sample_3-het\tSample_3-homVar\tSample_3-homRef"
+
+    getLinesFromFile(new File(outputDir, "exon.counts"))
+      .mkString("\n") shouldBe List(
+      header,
+      "geneA\t1\t0\t1\t1\t0\t1\t0\t1\t0\t0\t2",
+      "geneB\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0").mkString("\n")
+    getLinesFromFile(new File(outputDir, "intron.counts"))
+      .mkString("\n") shouldBe List(
+      header,
+      "geneA\t1\t0\t1\t0\t0\t0\t0\t1\t0\t1\t0",
+      "geneB\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0").mkString("\n")
+    getLinesFromFile(new File(outputDir, "total.counts"))
+      .mkString("\n") shouldBe List(
+      header,
+      "geneA\t2\t0\t2\t1\t0\t1\t0\t2\t0\t1\t2",
+      "geneB\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0").mkString("\n")
   }
 }

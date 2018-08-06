@@ -23,4 +23,7 @@ package nl.biopet.tools.findcompound
 
 import java.io.File
 
-case class Args(inputFile: File = null)
+case class Args(inputVcfFile: File = null,
+                outputDir: File = null,
+                referenceFasta: File = null,
+                refflatFile: File = null)

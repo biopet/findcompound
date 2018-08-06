@@ -101,6 +101,28 @@ class FindCompoundTest extends ToolTest[Args] {
     new File(outputDir, "exon.counts") should exist
     new File(outputDir, "intron.counts") should exist
     new File(outputDir, "total.counts") should exist
+  }
 
+  @Test
+  def testWrongPedigree(): Unit = {
+    val outputDir = File.createTempFile("test.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    outputDir.deleteOnExit()
+    intercept[IllegalArgumentException] {
+      FindCompound.main(
+        Array(
+          "-i",
+          resourcePath("/multi.vcf.gz"),
+          "-o",
+          outputDir.getAbsolutePath,
+          "-R",
+          resourcePath("/fake_chrQ.fa"),
+          "-r",
+          resourcePath("/chrQ.refflat"),
+          "-p",
+          resourcePath("/wrong.ped")
+        ))
+    }.getMessage shouldBe "Samples in vcf file not found in ped file: Sample_1, Sample_2, Sample_3"
   }
 }

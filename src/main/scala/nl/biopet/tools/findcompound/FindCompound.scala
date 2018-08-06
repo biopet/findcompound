@@ -242,5 +242,17 @@ object FindCompound extends ToolCommand[Args] {
                  "-r",
                  "<refflat file>")}
       |
+      |Run with pedigree information
+      |${example("-i",
+                 "<input vcf file>",
+                 "-o",
+                 "<output dir>",
+                 "-R",
+                 "<reference fasta>",
+                 "-r",
+                 "<refflat file>",
+                 "-p",
+                 "<ped file>")}
+      |
     """.stripMargin
 }

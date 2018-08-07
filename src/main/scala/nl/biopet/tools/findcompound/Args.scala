@@ -26,4 +26,5 @@ import java.io.File
 case class Args(inputVcfFile: File = null,
                 outputDir: File = null,
                 referenceFasta: File = null,
-                refflatFile: File = null)
+                refflatFile: File = null,
+                pedFile: Option[File] = None)

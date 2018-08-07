@@ -43,4 +43,7 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .required()
     .action((x, c) => c.copy(refflatFile = x))
     .text("Refflat file")
+  opt[File]('p', "pedFile")
+    .action((x, c) => c.copy(pedFile = Some(x)))
+    .text("Ped file for family information")
 }

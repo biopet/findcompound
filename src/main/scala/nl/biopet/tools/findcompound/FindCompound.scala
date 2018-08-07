@@ -27,6 +27,7 @@ import htsjdk.variant.vcf.VCFFileReader
 import nl.biopet.utils.ngs.intervals.BedRecord
 import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.tool.ToolCommand
+import nl.biopet.utils.ngs.ped.{PedigreeFile, Phenotype}
 import picard.annotation.{Gene, GeneAnnotationReader}
 
 import scala.collection.JavaConversions._
@@ -45,16 +46,25 @@ object FindCompound extends ToolCommand[Args] {
       .setGlobalLogLevel(
         htsjdk.samtools.util.Log.LogLevel.valueOf(logger.getLevel.toString))
 
-    logger.info("Reading refflat file")
-
+    logger.info("Start: Reading refflat file")
     val geneReader = GeneAnnotationReader.loadRefFlat(
       cmdArgs.refflatFile,
       fasta.getCachedDict(cmdArgs.referenceFasta))
+    logger.info("Done: Reading refflat file")
+
+    val pedigree = cmdArgs.pedFile.map(PedigreeFile.fromFile)
 
     val vcfReader = new VCFFileReader(cmdArgs.inputVcfFile, true)
 
     val samples = vcf.getSampleIds(cmdArgs.inputVcfFile).toIndexedSeq
     val sampleMap = samples.zipWithIndex.toMap
+
+    pedigree.foreach { pedFile =>
+      val notInPed = samples.filterNot(pedFile.samples.contains)
+      if (notInPed.nonEmpty)
+        throw new IllegalArgumentException(
+          s"Samples in vcf file not found in ped file: ${notInPed.mkString(", ")}")
+    }
 
     val results = geneReader.getAll
       .map(createGeneResults(_, sampleMap, vcfReader))
@@ -63,22 +73,28 @@ object FindCompound extends ToolCommand[Args] {
 
     writeOutput(results,
                 samples,
-                new File(cmdArgs.outputDir, "exon.counts"),
+                cmdArgs.outputDir,
+                "exon",
                 _.exonHomVarCount,
                 _.exonCompoundCount,
-                _.exonCounts)
+                _.exonCounts,
+                pedigree)
     writeOutput(results,
                 samples,
-                new File(cmdArgs.outputDir, "intron.counts"),
+                cmdArgs.outputDir,
+                "intron",
                 _.intronHomVarCount,
                 _.intronCompoundCount,
-                _.intronCounts)
+                _.intronCounts,
+                pedigree)
     writeOutput(results,
                 samples,
-                new File(cmdArgs.outputDir, "total.counts"),
+                cmdArgs.outputDir,
+                "total",
                 _.totalHomVarCount,
                 _.totalCompoundCount,
-                _.totalCounts)
+                _.totalCounts,
+                pedigree)
 
     logger.info("Done")
   }
@@ -116,12 +132,16 @@ object FindCompound extends ToolCommand[Args] {
   /** This method will write results to a file */
   def writeOutput(results: List[GeneResults],
                   samples: IndexedSeq[String],
-                  outputFile: File,
-                  homVarCount: (GeneResults) => Int,
-                  compoundCount: (GeneResults) => Int,
-                  sampleCounts: VariantTypes => List[Int]): Unit = {
-    val headerLine = (List("#Gene", "Compound", "HomRef") ++ samples.flatMap(
+                  outputDir: File,
+                  prefix: String,
+                  homVarCount: GeneResults => Int,
+                  compoundCount: GeneResults => Int,
+                  sampleCounts: VariantTypes => List[Int],
+                  pedigree: Option[PedigreeFile]): Unit = {
+    val headerLine = (List("#Gene", "Compound", "HomVar") ++ samples.flatMap(
       s => List(s"$s-het", s"$s-homVar", s"$s-homRef"))).mkString("\t")
+
+    val outputFile = new File(outputDir, prefix + ".counts")
 
     val writer = new PrintWriter(outputFile)
     writer.println(headerLine)
@@ -135,6 +155,67 @@ object FindCompound extends ToolCommand[Args] {
           .mkString("\t"))
     }
     writer.close()
+
+    pedigree.foreach { pedFile =>
+      val familiesAffected = pedFile.groupByFamilies.map {
+        case (fam, sam) =>
+          fam -> sam
+            .filter(_.phenotype == Phenotype.Affected)
+            .map(s => samples.indexOf(s.sampleId))
+            .filter(_ != -1)
+            .toIndexedSeq
+      }
+      val familiesUnAffected = pedFile.groupByFamilies.map {
+        case (fam, sam) =>
+          fam -> sam
+            .filter(_.phenotype == Phenotype.Unaffected)
+            .map(s => samples.indexOf(s.sampleId))
+            .filter(_ != -1)
+            .toIndexedSeq
+      }
+      val families = familiesAffected.keys.toIndexedSeq.sorted
+      val famOutputFile = new File(outputDir, prefix + ".family.counts")
+
+      val famHeaderLine = families
+        .flatMap(
+          fam =>
+            List(
+              "#Gene",
+              s"Compound-affected-$fam",
+              s"HomVar-affected-$fam",
+              s"Total-affected-$fam",
+              s"Compound-unaffected-$fam",
+              s"HomVar-unaffected-$fam",
+              s"Total-unaffected-$fam"
+          ))
+        .mkString("\t")
+
+      val famWriter = new PrintWriter(famOutputFile)
+      famWriter.println(famHeaderLine)
+      results.foreach { gene =>
+        val values = gene.gene.getName :: families.flatMap { fam =>
+          val affected = familiesAffected(fam)
+          val unaffected = familiesUnAffected(fam)
+          val affectedGene = gene.extractSamples(affected)
+          val affectedHomVar = homVarCount(affectedGene)
+          val affectedCompound = compoundCount(affectedGene)
+          val affectedTotal = affectedHomVar + affectedCompound
+          val unaffectedGene = gene.extractSamples(unaffected)
+          val unaffectedHomVar = homVarCount(unaffectedGene)
+          val unaffectedCompound = compoundCount(unaffectedGene)
+          val unaffectedTotal = unaffectedHomVar + unaffectedCompound
+          List(affectedCompound,
+               affectedHomVar,
+               affectedTotal,
+               unaffectedCompound,
+               unaffectedHomVar,
+               unaffectedTotal).map(_.toString)
+        }.toList
+        famWriter.println(values.mkString("\t"))
+      }
+
+      famWriter.close()
+    }
   }
 
   def descriptionText: String =
@@ -160,6 +241,18 @@ object FindCompound extends ToolCommand[Args] {
                  "<reference fasta>",
                  "-r",
                  "<refflat file>")}
+      |
+      |Run with pedigree information
+      |${example("-i",
+                 "<input vcf file>",
+                 "-o",
+                 "<output dir>",
+                 "-R",
+                 "<reference fasta>",
+                 "-r",
+                 "<refflat file>",
+                 "-p",
+                 "<ped file>")}
       |
     """.stripMargin
 }

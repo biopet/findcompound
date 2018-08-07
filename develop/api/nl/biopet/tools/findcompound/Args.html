@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputVcfFile">inputVcfFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="referenceFasta">referenceFasta: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="refflatFile">refflatFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Args</span><span class="params">(<span name="inputVcfFile">inputVcfFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="referenceFasta">referenceFasta: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="refflatFile">refflatFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="pedFile">pedFile: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.findcompound.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(inputVcfFile:java.io.File,outputDir:java.io.File,referenceFasta:java.io.File,refflatFile:java.io.File):nl.biopet.tools.findcompound.Args"></a>
+      <a id="&lt;init&gt;(inputVcfFile:java.io.File,outputDir:java.io.File,referenceFasta:java.io.File,refflatFile:java.io.File,pedFile:Option[java.io.File]):nl.biopet.tools.findcompound.Args"></a>
       <a id="&lt;init&gt;:Args"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputVcfFile">inputVcfFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="referenceFasta">referenceFasta: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="refflatFile">refflatFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>)</span>
+        <span class="name">Args</span><span class="params">(<span name="inputVcfFile">inputVcfFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="referenceFasta">referenceFasta: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="refflatFile">refflatFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="pedFile">pedFile: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.findcompound.Args@&lt;init&gt;(inputVcfFile:java.io.File,outputDir:java.io.File,referenceFasta:java.io.File,refflatFile:java.io.File):nl.biopet.tools.findcompound.Args" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.findcompound.Args@&lt;init&gt;(inputVcfFile:java.io.File,outputDir:java.io.File,referenceFasta:java.io.File,refflatFile:java.io.File,pedFile:Option[java.io.File]):nl.biopet.tools.findcompound.Args" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -360,6 +360,23 @@
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.findcompound.Args@outputDir:java.io.File" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.findcompound.Args#pedFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pedFile:Option[java.io.File]"></a>
+      <a id="pedFile:Option[File]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pedFile</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.findcompound.Args@pedFile:Option[java.io.File]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

@@ -125,6 +125,13 @@
 -o &lt;output dir&gt; \
 -R &lt;reference fasta&gt; \
 -r &lt;refflat file&gt;</code></pre>
+        <p>Run with pedigree information</p>
+        <pre><code>java -jar &lt;FindCompound_jar&gt; \
+-i &lt;input vcf file&gt; \
+-o &lt;output dir&gt; \
+-R &lt;reference fasta&gt; \
+-r &lt;refflat file&gt; \
+-p &lt;ped file&gt;</code></pre>
         
         <h2 id="usage" class="section">Usage</h2>
         <p>Usage for FindCompound:</p>
@@ -179,6 +186,12 @@
               <td>yes</td>
               <td>no</td>
               <td>Refflat file</td>
+            </tr>
+            <tr>
+              <td>--pedFile, -p</td>
+              <td>no</td>
+              <td>no</td>
+              <td>Ped file for family information</td>
             </tr>
           </tbody>
         </table>
